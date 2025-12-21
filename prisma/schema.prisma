@@ -1,0 +1,112 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Orchestra {
+  id             String         @id @default(uuid())
+  name           String
+  repositoryPath String
+  status         OrchestraStatus @default(ACTIVE)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  agents         Agent[]
+  backlogItems   BacklogItem[]
+
+  @@map("orchestras")
+}
+
+model Agent {
+  id                String      @id @default(uuid())
+  orchestraId       String
+  name              String
+  status            AgentStatus @default(IDLE)
+  currentBranch     String?
+  currentBacklogItemId String?
+  sessionId         String?     // Agent SDK session ID
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  orchestra         Orchestra   @relation(fields: [orchestraId], references: [id], onDelete: Cascade)
+  conversations     Conversation[]
+  assignedItems     BacklogItem[]
+
+  @@map("agents")
+}
+
+model BacklogItem {
+  id              String           @id @default(uuid())
+  orchestraId     String
+  content         String
+  status          BacklogItemStatus @default(TODO)
+  assignedAgentId String?
+  branch          String?
+  position        Int
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  orchestra       Orchestra        @relation(fields: [orchestraId], references: [id], onDelete: Cascade)
+  assignedAgent   Agent?           @relation(fields: [assignedAgentId], references: [id], onDelete: SetNull)
+
+  @@map("backlog_items")
+}
+
+model Conversation {
+  id        String   @id @default(uuid())
+  agentId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  messages  Message[]
+
+  @@map("conversations")
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  role           MessageRole
+  content        String       @db.Text
+  metadata       Json?        // For tool calls, context, etc.
+  createdAt      DateTime     @default(now())
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+enum OrchestraStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum AgentStatus {
+  IDLE
+  WORKING
+  PAUSED
+  TERMINATED
+}
+
+enum BacklogItemStatus {
+  TODO
+  IN_PROGRESS
+  IN_REVIEW
+  DONE
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
