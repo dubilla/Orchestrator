@@ -15,10 +15,10 @@ type Agent = {
 type BacklogItem = {
   id: string;
   content: string;
-  status: string;
-  assignedAgentId?: string;
-  assignedAgent?: Agent;
+  status: 'QUEUED' | 'IN_PROGRESS' | 'WAITING' | 'PR_OPEN' | 'DONE' | 'FAILED';
   branch?: string;
+  prUrl?: string;
+  prNumber?: number;
   position: number;
 };
 
@@ -26,6 +26,9 @@ type Orchestra = {
   id: string;
   name: string;
   repositoryPath: string;
+  githubRemote?: string;
+  wipLimit: number;
+  status: 'ACTIVE' | 'PAUSED';
 };
 
 export default function OrchestraDetail() {
@@ -111,23 +114,6 @@ export default function OrchestraDetail() {
       }
     } catch (error) {
       console.error('Failed to create agent:', error);
-    }
-  };
-
-  const assignItem = async (itemId: string, agentId: string) => {
-    try {
-      const res = await fetch(`/api/backlog/${itemId}/assign`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ agentId }),
-      });
-
-      if (res.ok) {
-        fetchBacklog();
-        fetchAgents();
-      }
-    } catch (error) {
-      console.error('Failed to assign item:', error);
     }
   };
 
@@ -326,40 +312,29 @@ export default function OrchestraDetail() {
                       className={`ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                         item.status === 'IN_PROGRESS'
                           ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                          : item.status === 'IN_REVIEW'
+                          : item.status === 'WAITING'
+                          ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                          : item.status === 'PR_OPEN'
                           ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
                           : item.status === 'DONE'
                           ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                          : item.status === 'FAILED'
+                          ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                           : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
                       }`}
                     >
                       {item.status}
                     </span>
                   </div>
-                  {item.assignedAgent && (
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
-                      Assigned to: {item.assignedAgent.name}
-                    </p>
-                  )}
-                  {item.status === 'TODO' && agents.filter(a => a.status === 'IDLE').length > 0 && (
-                    <select
-                      onChange={(e) => {
-                        if (e.target.value) {
-                          assignItem(item.id, e.target.value);
-                        }
-                      }}
-                      className="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white w-full"
-                      defaultValue=""
+                  {item.prUrl && (
+                    <a
+                      href={item.prUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
                     >
-                      <option value="" disabled>Assign to agent...</option>
-                      {agents
-                        .filter(agent => agent.status === 'IDLE')
-                        .map(agent => (
-                          <option key={agent.id} value={agent.id}>
-                            {agent.name}
-                          </option>
-                        ))}
-                    </select>
+                      PR #{item.prNumber}
+                    </a>
                   )}
                 </div>
               ))}
