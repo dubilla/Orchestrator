@@ -44,3 +44,6 @@ next-env.d.ts
 
 # documentation and investigation files
 *.md
+
+# Claude
+.claude/settings.local.json
