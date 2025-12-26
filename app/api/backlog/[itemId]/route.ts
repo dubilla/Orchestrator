@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-// PATCH /api/backlog/:itemId - Update item status
+// PATCH /api/backlog/:itemId - Update item (content, position)
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ itemId: string }> }
@@ -9,39 +9,43 @@ export async function PATCH(
   try {
     const { itemId } = await params;
     const body = await request.json();
-    const { status } = body;
+    const { content, position } = body;
 
     const item = await prisma.backlogItem.update({
       where: { id: itemId },
-      data: { status },
-      include: { assignedAgent: true }
+      data: {
+        ...(content !== undefined && { content }),
+        ...(position !== undefined && { position }),
+      },
     });
-
-    // If item is being marked as TODO, release the agent
-    if (status === 'TODO' && item.assignedAgentId) {
-      await prisma.agent.update({
-        where: { id: item.assignedAgentId },
-        data: {
-          status: 'IDLE',
-          currentBacklogItemId: null,
-          currentBranch: null
-        }
-      });
-
-      await prisma.backlogItem.update({
-        where: { id: itemId },
-        data: {
-          assignedAgentId: null,
-          branch: null
-        }
-      });
-    }
 
     return NextResponse.json(item);
   } catch (error) {
     console.error('Error updating backlog item:', error);
     return NextResponse.json(
       { error: 'Failed to update backlog item' },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE /api/backlog/:itemId - Remove item from backlog
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ itemId: string }> }
+) {
+  try {
+    const { itemId } = await params;
+
+    await prisma.backlogItem.delete({
+      where: { id: itemId },
+    });
+
+    return NextResponse.json({ deleted: true });
+  } catch (error) {
+    console.error('Error deleting backlog item:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete backlog item' },
       { status: 500 }
     );
   }

@@ -44,15 +44,8 @@ export async function DELETE(
       data: { status: 'TERMINATED' }
     });
 
-    // Release any assigned backlog items
-    await prisma.backlogItem.updateMany({
-      where: { assignedAgentId: id },
-      data: {
-        status: 'TODO',
-        assignedAgentId: null,
-        branch: null
-      }
-    });
+    // Note: In the new queue-based model, backlog items are not assigned to agents
+    // This endpoint will be removed in cleanup
 
     return successResponse({ deleted: true });
   } catch (error) {
