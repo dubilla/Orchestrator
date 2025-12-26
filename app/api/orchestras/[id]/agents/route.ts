@@ -15,8 +15,7 @@ export async function GET(
         conversations: {
           orderBy: { createdAt: 'desc' },
           take: 1
-        },
-        assignedItems: true
+        }
       }
     });
 

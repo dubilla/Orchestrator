@@ -61,8 +61,7 @@ export async function GET(
 
     // Get or create backlog items in database
     const existingItems = await prisma.backlogItem.findMany({
-      where: { orchestraId: id },
-      include: { assignedAgent: true }
+      where: { orchestraId: id }
     });
 
     // Map existing items by content for quick lookup

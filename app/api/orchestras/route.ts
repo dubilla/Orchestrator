@@ -38,7 +38,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, repositoryPath } = body;
+    const { name, repositoryPath, githubRemote, wipLimit } = body;
 
     // Validate required fields
     if (!name || !repositoryPath) {
@@ -48,7 +48,9 @@ export async function POST(request: NextRequest) {
     const orchestra = await prisma.orchestra.create({
       data: {
         name,
-        repositoryPath
+        repositoryPath,
+        ...(githubRemote && { githubRemote }),
+        ...(wipLimit !== undefined && { wipLimit }),
       }
     });
 
