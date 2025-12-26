@@ -13,12 +13,14 @@ datasource db {
 }
 
 model Orchestra {
-  id             String         @id @default(uuid())
+  id             String          @id @default(uuid())
   name           String
   repositoryPath String
+  githubRemote   String?
+  wipLimit       Int             @default(2)
   status         OrchestraStatus @default(ACTIVE)
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 
   agents         Agent[]
   backlogItems   BacklogItem[]
@@ -27,36 +29,36 @@ model Orchestra {
 }
 
 model Agent {
-  id                String      @id @default(uuid())
-  orchestraId       String
-  name              String
-  status            AgentStatus @default(IDLE)
-  currentBranch     String?
+  id                   String       @id @default(uuid())
+  orchestraId          String
+  name                 String
+  status               AgentStatus  @default(IDLE)
+  currentBranch        String?
   currentBacklogItemId String?
-  sessionId         String?     // Agent SDK session ID
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
+  sessionId            String?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
 
-  orchestra         Orchestra   @relation(fields: [orchestraId], references: [id], onDelete: Cascade)
-  conversations     Conversation[]
-  assignedItems     BacklogItem[]
+  orchestra            Orchestra    @relation(fields: [orchestraId], references: [id], onDelete: Cascade)
+  conversations        Conversation[]
 
   @@map("agents")
 }
 
 model BacklogItem {
-  id              String           @id @default(uuid())
+  id              String            @id @default(uuid())
   orchestraId     String
   content         String
-  status          BacklogItemStatus @default(TODO)
-  assignedAgentId String?
+  status          BacklogItemStatus @default(QUEUED)
   branch          String?
   position        Int
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  prUrl           String?
+  prNumber        Int?
+  retryCount      Int               @default(0)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
 
-  orchestra       Orchestra        @relation(fields: [orchestraId], references: [id], onDelete: Cascade)
-  assignedAgent   Agent?           @relation(fields: [assignedAgentId], references: [id], onDelete: SetNull)
+  orchestra       Orchestra         @relation(fields: [orchestraId], references: [id], onDelete: Cascade)
 
   @@map("backlog_items")
 }
@@ -88,7 +90,7 @@ model Message {
 
 enum OrchestraStatus {
   ACTIVE
-  INACTIVE
+  PAUSED
 }
 
 enum AgentStatus {
@@ -99,10 +101,12 @@ enum AgentStatus {
 }
 
 enum BacklogItemStatus {
-  TODO
+  QUEUED
   IN_PROGRESS
-  IN_REVIEW
+  WAITING
+  PR_OPEN
   DONE
+  FAILED
 }
 
 enum MessageRole {
