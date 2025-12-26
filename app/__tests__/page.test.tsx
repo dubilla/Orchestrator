@@ -36,10 +36,14 @@ describe('Home Page', () => {
         id: '1',
         name: 'Test Orchestra',
         repositoryPath: '/test/path',
+        wipLimit: 2,
         status: 'ACTIVE',
         createdAt: '2024-01-01T00:00:00Z',
         agents: [{ id: 'a1', name: 'Agent 1' }],
-        backlogItems: [{ id: 'b1', title: 'Task 1' }],
+        backlogItems: [
+          { id: 'b1', content: 'Task 1', status: 'QUEUED' },
+          { id: 'b2', content: 'Task 2', status: 'IN_PROGRESS' },
+        ],
       },
     ];
 
@@ -55,8 +59,8 @@ describe('Home Page', () => {
     });
 
     expect(screen.getByText('/test/path')).toBeInTheDocument();
-    expect(screen.getByText('1 agents')).toBeInTheDocument();
-    expect(screen.getByText('1 tasks')).toBeInTheDocument();
+    expect(screen.getByText('2 queued')).toBeInTheDocument();
+    expect(screen.getByText('WIP: 1/2')).toBeInTheDocument();
     expect(screen.getByText('ACTIVE')).toBeInTheDocument();
   });
 

@@ -10,13 +10,16 @@ type Agent = {
 
 type BacklogItem = {
   id: string;
-  title: string;
+  content: string;
+  status: 'QUEUED' | 'IN_PROGRESS' | 'WAITING' | 'PR_OPEN' | 'DONE' | 'FAILED';
 };
 
 type Orchestra = {
   id: string;
   name: string;
   repositoryPath: string;
+  githubRemote?: string;
+  wipLimit: number;
   status: string;
   createdAt: string;
   agents: Agent[];
@@ -62,6 +65,8 @@ export default function Home() {
         body: JSON.stringify({
           name: formData.get('name'),
           repositoryPath: formData.get('repositoryPath'),
+          githubRemote: formData.get('githubRemote') || undefined,
+          wipLimit: formData.get('wipLimit') ? parseInt(formData.get('wipLimit') as string, 10) : undefined,
         }),
       });
 
@@ -115,10 +120,10 @@ export default function Home() {
                 </p>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500 dark:text-gray-400">
-                    {orchestra.agents.length} agents
+                    {orchestra.backlogItems.length} queued
                   </span>
                   <span className="text-gray-500 dark:text-gray-400">
-                    {orchestra.backlogItems.length} tasks
+                    WIP: {orchestra.backlogItems.filter(i => ['IN_PROGRESS', 'WAITING', 'PR_OPEN'].includes(i.status)).length}/{orchestra.wipLimit}
                   </span>
                 </div>
                 <div className="mt-4">
@@ -170,8 +175,35 @@ export default function Home() {
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
                     placeholder="/Users/username/projects/my-app"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    GitHub Remote
+                  </label>
+                  <input
+                    type="text"
+                    name="githubRemote"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                    placeholder="https://github.com/username/repo"
+                  />
                   <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Will look for PRD.md and backlog.md in this directory
+                    Used for creating pull requests
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    WIP Limit
+                  </label>
+                  <input
+                    type="number"
+                    name="wipLimit"
+                    min="1"
+                    max="10"
+                    defaultValue="2"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                  />
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Max concurrent work items (in progress + waiting + open PRs)
                   </p>
                 </div>
               </div>
