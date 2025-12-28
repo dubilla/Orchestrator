@@ -19,6 +19,8 @@ model Orchestra {
   githubRemote   String?
   wipLimit       Int             @default(2)
   status         OrchestraStatus @default(ACTIVE)
+  lastSyncedAt   DateTime?
+  lastSyncedHash String?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
 
@@ -49,6 +51,7 @@ model BacklogItem {
   id              String            @id @default(uuid())
   orchestraId     String
   content         String
+  description     String?           @db.Text
   status          BacklogItemStatus @default(QUEUED)
   branch          String?
   position        Int
