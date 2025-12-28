@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import AgentConversation from './AgentConversation';
+import SyncBanner from './SyncBanner';
+import SyncPreviewModal from './SyncPreviewModal';
 
 type Agent = {
   id: string;
@@ -15,6 +17,7 @@ type Agent = {
 type BacklogItem = {
   id: string;
   content: string;
+  description?: string;
   status: 'QUEUED' | 'IN_PROGRESS' | 'WAITING' | 'PR_OPEN' | 'DONE' | 'FAILED';
   branch?: string;
   prUrl?: string;
@@ -29,6 +32,33 @@ type Orchestra = {
   githubRemote?: string;
   wipLimit: number;
   status: 'ACTIVE' | 'PAUSED';
+  lastSyncedAt?: string;
+  lastSyncedHash?: string;
+};
+
+export type SyncPreviewData = {
+  preview: {
+    adds: Array<{ content: string; lineNumber: number; position: number }>;
+    updates: Array<{
+      existingItemId: string;
+      existingContent: string;
+      newContent: string;
+      similarity: number;
+    }>;
+    removes: Array<{ existingItemId: string; content: string }>;
+    conflicts: Array<{
+      existingItemId: string;
+      existingContent: string;
+      existingStatus: string;
+      markdownContent: string;
+      similarity: number;
+      reason: 'completed_match' | 'active_match';
+    }>;
+    unchangedCount: number;
+  };
+  currentHash: string;
+  lastSyncedHash: string | null;
+  hasChanges: boolean;
 };
 
 export default function OrchestraDetail() {
@@ -42,6 +72,26 @@ export default function OrchestraDetail() {
   const [showAgentModal, setShowAgentModal] = useState(false);
   const [showTerminatedAgents, setShowTerminatedAgents] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Sync-related state
+  const [syncPreview, setSyncPreview] = useState<SyncPreviewData | null>(null);
+  const [showSyncModal, setShowSyncModal] = useState(false);
+  const [syncLoading, setSyncLoading] = useState(false);
+
+  // Expandable backlog items
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+
+  const toggleItemExpanded = (itemId: string) => {
+    setExpandedItems((prev) => {
+      const next = new Set(prev);
+      if (next.has(itemId)) {
+        next.delete(itemId);
+      } else {
+        next.add(itemId);
+      }
+      return next;
+    });
+  };
 
   const fetchOrchestra = useCallback(async () => {
     try {
@@ -87,13 +137,58 @@ export default function OrchestraDetail() {
     }
   }, [orchestraId]);
 
+  const checkForSyncChanges = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/orchestras/${orchestraId}/backlog/sync-preview`, {
+        method: 'POST',
+      });
+      const result = await res.json();
+      if (result.success) {
+        setSyncPreview(result.data);
+      } else {
+        console.error('Failed to check sync:', result.error);
+        setSyncPreview(null);
+      }
+    } catch (error) {
+      console.error('Failed to check sync:', error);
+      setSyncPreview(null);
+    }
+  }, [orchestraId]);
+
+  const executeSync = async (conflictResolutions: Array<{ action: 'requeue' | 'skip'; conflictIndex: number }>) => {
+    setSyncLoading(true);
+    try {
+      const res = await fetch(`/api/orchestras/${orchestraId}/backlog/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conflictResolutions }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setShowSyncModal(false);
+        setSyncPreview(null);
+        // Refresh data after sync
+        await fetchBacklog();
+        await fetchOrchestra();
+        await checkForSyncChanges();
+      } else {
+        console.error('Failed to execute sync:', result.error);
+      }
+    } catch (error) {
+      console.error('Failed to execute sync:', error);
+    } finally {
+      setSyncLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (orchestraId) {
       fetchOrchestra();
       fetchAgents();
       fetchBacklog();
+      checkForSyncChanges();
     }
-  }, [orchestraId, fetchOrchestra, fetchAgents, fetchBacklog]);
+  }, [orchestraId, fetchOrchestra, fetchAgents, fetchBacklog, checkForSyncChanges]);
 
   const createAgent = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -168,6 +263,14 @@ export default function OrchestraDetail() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Sync Banner */}
+      {syncPreview?.hasChanges && (
+        <SyncBanner
+          preview={syncPreview}
+          onReviewChanges={() => setShowSyncModal(true)}
+        />
+      )}
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
@@ -176,7 +279,7 @@ export default function OrchestraDetail() {
           </h1>
           <button
             onClick={() => setShowAgentModal(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors cursor-pointer"
           >
             Spawn Agent
           </button>
@@ -299,45 +402,68 @@ export default function OrchestraDetail() {
               Backlog
             </h2>
             <div className="space-y-2 max-h-[600px] overflow-y-auto">
-              {backlogItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="bg-white dark:bg-gray-800 rounded-lg p-3"
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <p className="text-sm text-gray-900 dark:text-white flex-grow">
-                      {item.content}
-                    </p>
-                    <span
-                      className={`ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                        item.status === 'IN_PROGRESS'
-                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                          : item.status === 'WAITING'
-                          ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                          : item.status === 'PR_OPEN'
-                          ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
-                          : item.status === 'DONE'
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                          : item.status === 'FAILED'
-                          ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                          : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                      }`}
+              {backlogItems.map((item) => {
+                const isExpanded = expandedItems.has(item.id);
+                const hasDescription = item.description && item.description.trim().length > 0;
+
+                return (
+                  <div
+                    key={item.id}
+                    className="bg-white dark:bg-gray-800 rounded-lg p-3"
+                  >
+                    <div
+                      className={`flex justify-between items-start ${hasDescription ? 'cursor-pointer' : ''}`}
+                      onClick={() => hasDescription && toggleItemExpanded(item.id)}
                     >
-                      {item.status}
-                    </span>
+                      <div className="flex items-start flex-grow min-w-0">
+                        {hasDescription && (
+                          <span className="mr-2 text-gray-400 dark:text-gray-500 flex-shrink-0 text-sm">
+                            {isExpanded ? '▼' : '▶'}
+                          </span>
+                        )}
+                        <p className="text-sm text-gray-900 dark:text-white truncate">
+                          {item.content}
+                        </p>
+                      </div>
+                      <span
+                        className={`ml-2 flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                          item.status === 'IN_PROGRESS'
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                            : item.status === 'WAITING'
+                            ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                            : item.status === 'PR_OPEN'
+                            ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+                            : item.status === 'DONE'
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                            : item.status === 'FAILED'
+                            ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                            : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        {item.status}
+                      </span>
+                    </div>
+                    {isExpanded && hasDescription && (
+                      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                        <div className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap prose prose-sm dark:prose-invert max-w-none">
+                          {item.description}
+                        </div>
+                      </div>
+                    )}
+                    {item.prUrl && (
+                      <a
+                        href={item.prUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-2 block"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        PR #{item.prNumber}
+                      </a>
+                    )}
                   </div>
-                  {item.prUrl && (
-                    <a
-                      href={item.prUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                    >
-                      PR #{item.prNumber}
-                    </a>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -398,7 +524,7 @@ export default function OrchestraDetail() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors cursor-pointer"
                 >
                   Spawn
                 </button>
@@ -406,6 +532,16 @@ export default function OrchestraDetail() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Sync Preview Modal */}
+      {showSyncModal && syncPreview && (
+        <SyncPreviewModal
+          preview={syncPreview}
+          loading={syncLoading}
+          onClose={() => setShowSyncModal(false)}
+          onSync={executeSync}
+        />
       )}
     </div>
   );
