@@ -255,14 +255,20 @@ export default function OrchestraDetail() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="flex justify-center items-center min-h-screen" style={{ background: 'var(--background)' }}>
+        <div
+          className="animate-spin rounded-full h-10 w-10 border-2"
+          style={{
+            borderColor: 'var(--border)',
+            borderTopColor: 'var(--accent)'
+          }}
+        ></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen" style={{ background: 'var(--background)' }}>
       {/* Sync Banner */}
       {syncPreview?.hasChanges && (
         <SyncBanner
@@ -271,15 +277,27 @@ export default function OrchestraDetail() {
         />
       )}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-8">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+        <div className="flex justify-between items-center mb-10">
+          <h1
+            className="text-4xl font-light tracking-tight"
+            style={{
+              fontFamily: 'var(--font-display)',
+              color: 'var(--text-primary)'
+            }}
+          >
             {orchestra?.name}
           </h1>
           <button
             onClick={() => setShowAgentModal(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors cursor-pointer"
+            className="px-5 py-2.5 text-sm font-medium rounded-lg cursor-pointer"
+            style={{
+              background: 'var(--accent)',
+              color: 'var(--surface-elevated)',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--accent-hover)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'var(--accent)'}
           >
             Spawn Agent
           </button>
@@ -288,82 +306,109 @@ export default function OrchestraDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Agents Panel */}
           <div className="lg:col-span-1 space-y-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Agents
-              </h2>
-            </div>
+            <h2
+              className="text-xl font-light mb-5"
+              style={{
+                fontFamily: 'var(--font-display)',
+                color: 'var(--text-primary)'
+              }}
+            >
+              Agents
+            </h2>
 
             {/* Tab Switcher */}
-            <div className="flex gap-2 mb-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex gap-1 mb-6 p-1 rounded-lg" style={{ background: 'var(--surface)' }}>
               <button
                 onClick={() => setShowTerminatedAgents(false)}
-                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all cursor-pointer`}
+                style={
                   !showTerminatedAgents
-                    ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                }`}
+                    ? { background: 'var(--accent)', color: 'var(--surface-elevated)' }
+                    : { background: 'transparent', color: 'var(--text-secondary)' }
+                }
               >
                 Active
               </button>
               <button
                 onClick={() => setShowTerminatedAgents(true)}
-                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all cursor-pointer`}
+                style={
                   showTerminatedAgents
-                    ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                }`}
+                    ? { background: 'var(--accent)', color: 'var(--surface-elevated)' }
+                    : { background: 'transparent', color: 'var(--text-secondary)' }
+                }
               >
                 Terminated
               </button>
             </div>
 
             {agents.filter(a => showTerminatedAgents ? a.status === 'TERMINATED' : a.status !== 'TERMINATED').length === 0 ? (
-              <p className="text-gray-500 dark:text-gray-400">
+              <p className="text-sm py-8 text-center" style={{ color: 'var(--text-tertiary)' }}>
                 {showTerminatedAgents ? 'No terminated agents' : 'No agents yet'}
               </p>
             ) : (
               agents.filter(a => showTerminatedAgents ? a.status === 'TERMINATED' : a.status !== 'TERMINATED').map((agent) => (
                 <div
                   key={agent.id}
-                  className={`bg-white dark:bg-gray-800 rounded-lg p-4 cursor-pointer transition-all ${
+                  className={`rounded-xl p-4 cursor-pointer transition-all ${
                     selectedAgent?.id === agent.id
-                      ? 'ring-2 ring-blue-600'
-                      : 'hover:shadow-md'
+                      ? 'ring-2'
+                      : ''
                   }`}
+                  style={{
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    ...(selectedAgent?.id === agent.id && { ringColor: 'var(--accent)', borderColor: 'var(--accent)' })
+                  }}
                   onClick={() => setSelectedAgent(agent)}
+                  onMouseEnter={(e) => {
+                    if (selectedAgent?.id !== agent.id) {
+                      e.currentTarget.style.borderColor = 'var(--accent)';
+                      e.currentTarget.style.boxShadow = '0 2px 8px var(--shadow-subtle)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (selectedAgent?.id !== agent.id) {
+                      e.currentTarget.style.borderColor = 'var(--border)';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }
+                  }}
                 >
                   <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-semibold text-gray-900 dark:text-white">
+                    <h3 className="font-medium" style={{ color: 'var(--text-primary)' }}>
                       {agent.name}
                     </h3>
                     <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                      className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
+                      style={
                         agent.status === 'WORKING'
-                          ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                          ? { background: 'rgba(234, 179, 8, 0.1)', color: '#ca8a04' }
                           : agent.status === 'PAUSED'
-                          ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
+                          ? { background: 'rgba(249, 115, 22, 0.1)', color: '#ea580c' }
                           : agent.status === 'TERMINATED'
-                          ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                          : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                      }`}
+                          ? { background: 'rgba(220, 38, 38, 0.1)', color: '#dc2626' }
+                          : { background: 'var(--border)', color: 'var(--text-secondary)' }
+                      }
                     >
                       {agent.status}
                     </span>
                   </div>
                   {agent.currentBacklogItemId && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                      Working on: {backlogItems.find(item => item.id === agent.currentBacklogItemId)?.content}
+                    <p className="text-sm truncate mb-3" style={{ color: 'var(--text-secondary)' }}>
+                      {backlogItems.find(item => item.id === agent.currentBacklogItemId)?.content}
                     </p>
                   )}
-                  <div className="flex gap-2 mt-3">
+                  <div className="flex gap-2">
                     {agent.status === 'WORKING' && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           pauseAgent(agent.id);
                         }}
-                        className="text-sm px-3 py-1 bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition-colors"
+                        className="text-xs px-3 py-1.5 rounded-md font-medium transition-colors cursor-pointer"
+                        style={{ background: 'rgba(249, 115, 22, 0.1)', color: '#ea580c' }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(249, 115, 22, 0.2)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(249, 115, 22, 0.1)'}
                       >
                         Pause
                       </button>
@@ -374,7 +419,10 @@ export default function OrchestraDetail() {
                           e.stopPropagation();
                           resumeAgent(agent.id);
                         }}
-                        className="text-sm px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors"
+                        className="text-xs px-3 py-1.5 rounded-md font-medium transition-colors cursor-pointer"
+                        style={{ background: 'rgba(34, 197, 94, 0.1)', color: '#16a34a' }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(34, 197, 94, 0.2)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(34, 197, 94, 0.1)'}
                       >
                         Resume
                       </button>
@@ -385,7 +433,10 @@ export default function OrchestraDetail() {
                           e.stopPropagation();
                           killAgent(agent.id);
                         }}
-                        className="text-sm px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                        className="text-xs px-3 py-1.5 rounded-md font-medium transition-colors cursor-pointer"
+                        style={{ background: 'rgba(220, 38, 38, 0.1)', color: '#dc2626' }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(220, 38, 38, 0.2)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(220, 38, 38, 0.1)'}
                       >
                         Kill
                       </button>
@@ -398,10 +449,16 @@ export default function OrchestraDetail() {
 
           {/* Backlog Panel */}
           <div className="lg:col-span-1 space-y-4">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+            <h2
+              className="text-xl font-light mb-5"
+              style={{
+                fontFamily: 'var(--font-display)',
+                color: 'var(--text-primary)'
+              }}
+            >
               Backlog
             </h2>
-            <div className="space-y-2 max-h-[600px] overflow-y-auto">
+            <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
               {backlogItems.map((item) => {
                 const isExpanded = expandedItems.has(item.id);
                 const hasDescription = item.description && item.description.trim().length > 0;
@@ -409,7 +466,11 @@ export default function OrchestraDetail() {
                 return (
                   <div
                     key={item.id}
-                    className="bg-white dark:bg-gray-800 rounded-lg p-3"
+                    className="rounded-lg p-3.5 transition-all"
+                    style={{
+                      background: 'var(--surface)',
+                      border: '1px solid var(--border)'
+                    }}
                   >
                     <div
                       className={`flex justify-between items-start ${hasDescription ? 'cursor-pointer' : ''}`}
@@ -417,35 +478,36 @@ export default function OrchestraDetail() {
                     >
                       <div className="flex items-start flex-grow min-w-0">
                         {hasDescription && (
-                          <span className="mr-2 text-gray-400 dark:text-gray-500 flex-shrink-0 text-sm">
+                          <span className="mr-2 flex-shrink-0 text-xs" style={{ color: 'var(--text-tertiary)' }}>
                             {isExpanded ? '▼' : '▶'}
                           </span>
                         )}
-                        <p className="text-sm text-gray-900 dark:text-white truncate">
+                        <p className="text-sm truncate" style={{ color: 'var(--text-primary)' }}>
                           {item.content}
                         </p>
                       </div>
                       <span
-                        className={`ml-2 flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                        className={`ml-2 flex-shrink-0 inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium`}
+                        style={
                           item.status === 'IN_PROGRESS'
-                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                            ? { background: 'rgba(59, 130, 246, 0.1)', color: '#2563eb' }
                             : item.status === 'WAITING'
-                            ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                            ? { background: 'rgba(234, 179, 8, 0.1)', color: '#ca8a04' }
                             : item.status === 'PR_OPEN'
-                            ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+                            ? { background: 'rgba(168, 85, 247, 0.1)', color: '#9333ea' }
                             : item.status === 'DONE'
-                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                            ? { background: 'rgba(34, 197, 94, 0.1)', color: '#16a34a' }
                             : item.status === 'FAILED'
-                            ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                            : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                        }`}
+                            ? { background: 'rgba(220, 38, 38, 0.1)', color: '#dc2626' }
+                            : { background: 'var(--border)', color: 'var(--text-secondary)' }
+                        }
                       >
                         {item.status}
                       </span>
                     </div>
                     {isExpanded && hasDescription && (
-                      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                        <div className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap prose prose-sm dark:prose-invert max-w-none">
+                      <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
+                        <div className="text-sm whitespace-pre-wrap" style={{ color: 'var(--text-secondary)' }}>
                           {item.description}
                         </div>
                       </div>
@@ -455,7 +517,8 @@ export default function OrchestraDetail() {
                         href={item.prUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-2 block"
+                        className="text-xs hover:underline mt-2 block"
+                        style={{ color: 'var(--accent)' }}
                         onClick={(e) => e.stopPropagation()}
                       >
                         PR #{item.prNumber}
@@ -482,8 +545,14 @@ export default function OrchestraDetail() {
                 }}
               />
             ) : (
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-8 text-center">
-                <p className="text-gray-500 dark:text-gray-400">
+              <div
+                className="rounded-xl p-8 text-center"
+                style={{
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)'
+                }}
+              >
+                <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
                   Select an agent to view conversation
                 </p>
               </div>
@@ -494,37 +563,64 @@ export default function OrchestraDetail() {
 
       {/* Create Agent Modal */}
       {showAgentModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              Spawn New Agent
+        <div className="fixed inset-0 flex items-center justify-center p-4 z-50" style={{ background: 'rgba(0, 0, 0, 0.4)' }}>
+          <div
+            className="rounded-2xl p-8 w-full max-w-md"
+            style={{
+              background: 'var(--surface-elevated)',
+              border: '1px solid var(--border)',
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)'
+            }}
+          >
+            <h2
+              className="text-3xl font-light mb-6"
+              style={{
+                fontFamily: 'var(--font-display)',
+                color: 'var(--text-primary)'
+              }}
+            >
+              Spawn Agent
             </h2>
             <form onSubmit={createAgent}>
-              <div className="space-y-4">
+              <div className="space-y-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
                     Agent Name
                   </label>
                   <input
                     type="text"
                     name="name"
                     required
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                    className="w-full px-4 py-2.5 rounded-lg text-sm"
+                    style={{
+                      border: '1px solid var(--border)',
+                      background: 'var(--surface)',
+                      color: 'var(--text-primary)'
+                    }}
                     placeholder="Agent-1"
                   />
                 </div>
               </div>
-              <div className="flex justify-end gap-3 mt-6">
+              <div className="flex justify-end gap-3 mt-8">
                 <button
                   type="button"
                   onClick={() => setShowAgentModal(false)}
-                  className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                  className="px-5 py-2 text-sm font-medium rounded-lg cursor-pointer"
+                  style={{ color: 'var(--text-secondary)' }}
+                  onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
+                  onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors cursor-pointer"
+                  className="px-5 py-2 text-sm font-medium rounded-lg cursor-pointer"
+                  style={{
+                    background: 'var(--accent)',
+                    color: 'var(--surface-elevated)'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--accent-hover)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'var(--accent)'}
                 >
                   Spawn
                 </button>

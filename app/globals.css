@@ -1,8 +1,20 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Warm, elegant color palette inspired by the reference */
+  --background: #F5F3EF;
+  --foreground: #2D2A26;
+  --surface: #FDFCFA;
+  --surface-elevated: #FFFFFF;
+  --border: #E8E5DF;
+  --border-subtle: #F0EDE7;
+  --accent: #8B7355;
+  --accent-hover: #75614A;
+  --text-primary: #2D2A26;
+  --text-secondary: #6B6660;
+  --text-tertiary: #95908A;
+  --shadow-subtle: rgba(45, 42, 38, 0.04);
+  --shadow-medium: rgba(45, 42, 38, 0.08);
 }
 
 @theme inline {
@@ -10,17 +22,59 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-display);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #1A1816;
+    --foreground: #E8E5DF;
+    --surface: #222;
+    --surface-elevated: #2A2826;
+    --border: #3A3734;
+    --border-subtle: #2F2D2A;
+    --accent: #A08968;
+    --accent-hover: #B69A7A;
+    --text-primary: #E8E5DF;
+    --text-secondary: #A8A49E;
+    --text-tertiary: #6B6660;
+    --shadow-subtle: rgba(0, 0, 0, 0.2);
+    --shadow-medium: rgba(0, 0, 0, 0.3);
   }
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Smooth transitions for interactive elements */
+button, a, input, textarea, select {
+  transition: all 0.2s ease;
+}
+
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
 }

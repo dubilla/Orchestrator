@@ -13,13 +13,14 @@ export default function SyncBanner({ preview, onReviewChanges }: SyncBannerProps
   const hasConflicts = conflicts.length > 0;
 
   return (
-    <div className="bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+    <div style={{ background: 'rgba(251, 191, 36, 0.08)', borderBottom: '1px solid rgba(251, 191, 36, 0.2)' }}>
+      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex-shrink-0">
               <svg
-                className="h-5 w-5 text-amber-600 dark:text-amber-400"
+                className="h-5 w-5"
+                style={{ color: '#d97706' }}
                 viewBox="0 0 20 20"
                 fill="currentColor"
               >
@@ -30,23 +31,23 @@ export default function SyncBanner({ preview, onReviewChanges }: SyncBannerProps
                 />
               </svg>
             </div>
-            <div className="text-sm text-amber-800 dark:text-amber-200">
-              <span className="font-medium">Backlog file changed:</span>{' '}
+            <div className="text-sm" style={{ color: '#92400e' }}>
+              <span className="font-medium">Backlog file changed</span>
               {totalChanges > 0 && (
-                <span>
+                <span className="ml-2">
                   {adds.length > 0 && (
-                    <span className="text-green-700 dark:text-green-400">
+                    <span style={{ color: '#16a34a' }}>
                       +{adds.length} new
                     </span>
                   )}
                   {updates.length > 0 && (
-                    <span className="text-blue-700 dark:text-blue-400">
+                    <span style={{ color: '#2563eb' }}>
                       {adds.length > 0 ? ', ' : ''}
                       {updates.length} updated
                     </span>
                   )}
                   {removes.length > 0 && (
-                    <span className="text-red-700 dark:text-red-400">
+                    <span style={{ color: '#dc2626' }}>
                       {(adds.length > 0 || updates.length > 0) ? ', ' : ''}
                       -{removes.length} removed
                     </span>
@@ -54,7 +55,7 @@ export default function SyncBanner({ preview, onReviewChanges }: SyncBannerProps
                 </span>
               )}
               {hasConflicts && (
-                <span className="text-orange-700 dark:text-orange-400 ml-1">
+                <span style={{ color: '#ea580c' }} className="ml-1.5">
                   ({conflicts.length} conflict{conflicts.length > 1 ? 's' : ''})
                 </span>
               )}
@@ -62,7 +63,16 @@ export default function SyncBanner({ preview, onReviewChanges }: SyncBannerProps
           </div>
           <button
             onClick={onReviewChanges}
-            className="text-sm font-medium text-amber-700 dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-100 underline cursor-pointer"
+            className="text-sm font-medium underline cursor-pointer px-3 py-1.5 rounded-md transition-colors"
+            style={{ color: '#92400e' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(251, 191, 36, 0.1)';
+              e.currentTarget.style.color = '#78350f';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.color = '#92400e';
+            }}
           >
             Review & Sync
           </button>

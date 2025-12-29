@@ -201,21 +201,34 @@ export default function AgentConversation({ agent, onApprove, onRevise }: AgentC
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg h-[600px] flex flex-col">
+    <div
+      className="rounded-xl h-[600px] flex flex-col"
+      style={{
+        background: 'var(--surface)',
+        border: '1px solid var(--border)'
+      }}
+    >
       {/* Header */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+      <div className="p-5" style={{ borderBottom: '1px solid var(--border)' }}>
         <div className="flex justify-between items-center">
-          <h3 className="font-semibold text-gray-900 dark:text-white">
+          <h3
+            className="font-light text-lg"
+            style={{
+              fontFamily: 'var(--font-display)',
+              color: 'var(--text-primary)'
+            }}
+          >
             {agent.name}
           </h3>
           <span
-            className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+            className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
+            style={
               agent.status === 'WORKING'
-                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                ? { background: 'rgba(234, 179, 8, 0.1)', color: '#ca8a04' }
                 : agent.status === 'PAUSED'
-                ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
-                : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-            }`}
+                ? { background: 'rgba(249, 115, 22, 0.1)', color: '#ea580c' }
+                : { background: 'var(--border)', color: 'var(--text-secondary)' }
+            }
           >
             {agent.status}
           </span>
@@ -223,7 +236,7 @@ export default function AgentConversation({ agent, onApprove, onRevise }: AgentC
       </div>
 
       {/* Messages */}
-      <div className="flex-grow overflow-y-auto p-4 space-y-4">
+      <div className="flex-grow overflow-y-auto p-5 space-y-4">
         {messages
           .filter(msg => msg.role !== 'SYSTEM')
           .map((message) => (
@@ -234,13 +247,14 @@ export default function AgentConversation({ agent, onApprove, onRevise }: AgentC
               }`}
             >
               <div
-                className={`max-w-[80%] rounded-lg p-3 ${
+                className={`max-w-[80%] rounded-xl p-3.5`}
+                style={
                   message.role === 'USER'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
-                }`}
+                    ? { background: 'var(--accent)', color: 'var(--surface-elevated)' }
+                    : { background: 'var(--background)', color: 'var(--text-primary)', border: '1px solid var(--border)' }
+                }
               >
-                <pre className="whitespace-pre-wrap font-sans text-sm">
+                <pre className="whitespace-pre-wrap font-sans text-sm" style={{ margin: 0 }}>
                   {message.content}
                 </pre>
               </div>
@@ -250,11 +264,21 @@ export default function AgentConversation({ agent, onApprove, onRevise }: AgentC
         {/* Streaming message */}
         {streamingContent && (
           <div className="flex justify-start">
-            <div className="max-w-[80%] rounded-lg p-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white">
-              <pre className="whitespace-pre-wrap font-sans text-sm">
+            <div
+              className="max-w-[80%] rounded-xl p-3.5"
+              style={{
+                background: 'var(--background)',
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border)'
+              }}
+            >
+              <pre className="whitespace-pre-wrap font-sans text-sm" style={{ margin: 0 }}>
                 {streamingContent}
               </pre>
-              <span className="inline-block w-2 h-4 bg-gray-600 dark:bg-gray-400 animate-pulse ml-1"></span>
+              <span
+                className="inline-block w-2 h-4 animate-pulse ml-1"
+                style={{ background: 'var(--accent)' }}
+              ></span>
             </div>
           </div>
         )}
@@ -264,18 +288,30 @@ export default function AgentConversation({ agent, onApprove, onRevise }: AgentC
 
       {/* Review Controls */}
       {agent.status === 'WORKING' && agent.currentBacklogItemId && (
-        <div className="p-3 border-t border-gray-200 dark:border-gray-700">
+        <div className="p-4" style={{ borderTop: '1px solid var(--border)' }}>
           {!showRevisionInput ? (
             <div className="flex gap-2">
               <button
                 onClick={handleApprove}
-                className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors text-sm"
+                className="flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer"
+                style={{
+                  background: 'rgba(34, 197, 94, 0.1)',
+                  color: '#16a34a'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(34, 197, 94, 0.2)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(34, 197, 94, 0.1)'}
               >
                 Approve & Complete
               </button>
               <button
                 onClick={() => setShowRevisionInput(true)}
-                className="flex-1 px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-md transition-colors text-sm"
+                className="flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer"
+                style={{
+                  background: 'rgba(249, 115, 22, 0.1)',
+                  color: '#ea580c'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(249, 115, 22, 0.2)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(249, 115, 22, 0.1)'}
               >
                 Request Revision
               </button>
@@ -286,14 +322,23 @@ export default function AgentConversation({ agent, onApprove, onRevise }: AgentC
                 value={revisionFeedback}
                 onChange={(e) => setRevisionFeedback(e.target.value)}
                 placeholder="Describe what needs to be revised..."
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white text-sm"
+                className="w-full px-4 py-2.5 rounded-lg text-sm"
+                style={{
+                  border: '1px solid var(--border)',
+                  background: 'var(--background)',
+                  color: 'var(--text-primary)'
+                }}
                 rows={3}
               />
               <div className="flex gap-2">
                 <button
                   onClick={handleRevise}
                   disabled={!revisionFeedback.trim()}
-                  className="flex-1 px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-md transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  style={{
+                    background: 'var(--accent)',
+                    color: 'var(--surface-elevated)'
+                  }}
                 >
                   Send Revision Request
                 </button>
@@ -302,7 +347,10 @@ export default function AgentConversation({ agent, onApprove, onRevise }: AgentC
                     setShowRevisionInput(false);
                     setRevisionFeedback('');
                   }}
-                  className="px-3 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 text-sm"
+                  className="px-4 py-2 text-sm font-medium rounded-lg cursor-pointer"
+                  style={{ color: 'var(--text-secondary)' }}
+                  onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
+                  onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
                 >
                   Cancel
                 </button>
@@ -313,7 +361,7 @@ export default function AgentConversation({ agent, onApprove, onRevise }: AgentC
       )}
 
       {/* Input */}
-      <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+      <div className="p-4" style={{ borderTop: '1px solid var(--border)' }}>
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -327,12 +375,23 @@ export default function AgentConversation({ agent, onApprove, onRevise }: AgentC
             onChange={(e) => setInput(e.target.value)}
             placeholder={isStreaming ? 'Agent is responding...' : 'Type a message...'}
             disabled={isStreaming}
-            className="flex-grow px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white disabled:opacity-50"
+            className="flex-grow px-4 py-2.5 rounded-lg text-sm disabled:opacity-50"
+            style={{
+              border: '1px solid var(--border)',
+              background: 'var(--background)',
+              color: 'var(--text-primary)'
+            }}
           />
           <button
             type="submit"
             disabled={!input.trim() || isStreaming}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-5 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            style={{
+              background: 'var(--accent)',
+              color: 'var(--surface-elevated)'
+            }}
+            onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.background = 'var(--accent-hover)')}
+            onMouseLeave={(e) => !e.currentTarget.disabled && (e.currentTarget.style.background = 'var(--accent)')}
           >
             Send
           </button>

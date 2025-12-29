@@ -80,15 +80,27 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Orchestra Dashboard
+    <main className="min-h-screen" style={{ background: 'var(--background)' }}>
+      <div className="max-w-6xl mx-auto px-6 sm:px-8 lg:px-12 py-12">
+        <div className="flex justify-between items-center mb-12">
+          <h1
+            className="text-5xl font-light tracking-tight"
+            style={{
+              fontFamily: 'var(--font-display)',
+              color: 'var(--text-primary)'
+            }}
+          >
+            Orchestra
           </h1>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+            className="px-5 py-2.5 text-sm font-medium rounded-lg cursor-pointer"
+            style={{
+              background: 'var(--accent)',
+              color: 'var(--surface-elevated)',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--accent-hover)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'var(--accent)'}
           >
             New Orchestra
           </button>
@@ -96,43 +108,75 @@ export default function Home() {
 
         {loading ? (
           <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <div
+              className="animate-spin rounded-full h-10 w-10 border-2"
+              style={{
+                borderColor: 'var(--border)',
+                borderTopColor: 'var(--accent)'
+              }}
+            ></div>
           </div>
         ) : orchestras.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500 dark:text-gray-400 mb-4">
-              No orchestras yet. Create one to get started!
+          <div className="text-center py-20">
+            <p className="text-lg" style={{ color: 'var(--text-secondary)' }}>
+              No orchestras yet. Create one to begin.
             </p>
           </div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {orchestras.map((orchestra) => (
               <Link
                 key={orchestra.id}
                 href={`/orchestra/${orchestra.id}`}
-                className="block bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-shadow p-6"
+                className="block rounded-xl p-6 transition-all hover:-translate-y-0.5 cursor-pointer"
+                style={{
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  boxShadow: '0 1px 3px var(--shadow-subtle)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.boxShadow = '0 4px 12px var(--shadow-medium)';
+                  e.currentTarget.style.borderColor = 'var(--accent)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.boxShadow = '0 1px 3px var(--shadow-subtle)';
+                  e.currentTarget.style.borderColor = 'var(--border)';
+                }}
               >
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                <h2
+                  className="text-2xl font-light mb-3"
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    color: 'var(--text-primary)'
+                  }}
+                >
                   {orchestra.name}
                 </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 truncate">
+                <p className="text-sm mb-5 truncate" style={{ color: 'var(--text-tertiary)' }}>
                   {orchestra.repositoryPath}
                 </p>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">
+                <div className="flex justify-between text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
+                  <span>
                     {orchestra.backlogItems.length} queued
                   </span>
-                  <span className="text-gray-500 dark:text-gray-400">
+                  <span>
                     WIP: {orchestra.backlogItems.filter(i => ['IN_PROGRESS', 'WAITING', 'PR_OPEN'].includes(i.status)).length}/{orchestra.wipLimit}
                   </span>
                 </div>
-                <div className="mt-4">
+                <div>
                   <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
+                    style={
                       orchestra.status === 'ACTIVE'
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                        : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                    }`}
+                        ? {
+                            background: 'rgba(139, 115, 85, 0.1)',
+                            color: 'var(--accent)'
+                          }
+                        : {
+                            background: 'var(--border)',
+                            color: 'var(--text-secondary)'
+                          }
+                    }
                   >
                     {orchestra.status}
                   </span>
@@ -145,53 +189,81 @@ export default function Home() {
 
       {/* Create Orchestra Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              Create New Orchestra
+        <div className="fixed inset-0 flex items-center justify-center p-4 z-50" style={{ background: 'rgba(0, 0, 0, 0.4)' }}>
+          <div
+            className="rounded-2xl p-8 w-full max-w-md"
+            style={{
+              background: 'var(--surface-elevated)',
+              border: '1px solid var(--border)',
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)'
+            }}
+          >
+            <h2
+              className="text-3xl font-light mb-6"
+              style={{
+                fontFamily: 'var(--font-display)',
+                color: 'var(--text-primary)'
+              }}
+            >
+              New Orchestra
             </h2>
             <form onSubmit={createOrchestra}>
-              <div className="space-y-4">
+              <div className="space-y-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
                     Name
                   </label>
                   <input
                     type="text"
                     name="name"
                     required
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                    className="w-full px-4 py-2.5 rounded-lg text-sm"
+                    style={{
+                      border: '1px solid var(--border)',
+                      background: 'var(--surface)',
+                      color: 'var(--text-primary)'
+                    }}
                     placeholder="My Project Orchestra"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
                     Repository Path
                   </label>
                   <input
                     type="text"
                     name="repositoryPath"
                     required
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                    className="w-full px-4 py-2.5 rounded-lg text-sm"
+                    style={{
+                      border: '1px solid var(--border)',
+                      background: 'var(--surface)',
+                      color: 'var(--text-primary)'
+                    }}
                     placeholder="/Users/username/projects/my-app"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
                     GitHub Remote
                   </label>
                   <input
                     type="text"
                     name="githubRemote"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                    className="w-full px-4 py-2.5 rounded-lg text-sm"
+                    style={{
+                      border: '1px solid var(--border)',
+                      background: 'var(--surface)',
+                      color: 'var(--text-primary)'
+                    }}
                     placeholder="https://github.com/username/repo"
                   />
-                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  <p className="mt-1.5 text-xs" style={{ color: 'var(--text-tertiary)' }}>
                     Used for creating pull requests
                   </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
                     WIP Limit
                   </label>
                   <input
@@ -200,24 +272,38 @@ export default function Home() {
                     min="1"
                     max="10"
                     defaultValue="2"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                    className="w-full px-4 py-2.5 rounded-lg text-sm"
+                    style={{
+                      border: '1px solid var(--border)',
+                      background: 'var(--surface)',
+                      color: 'var(--text-primary)'
+                    }}
                   />
-                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Max concurrent work items (in progress + waiting + open PRs)
+                  <p className="mt-1.5 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                    Max concurrent work items
                   </p>
                 </div>
               </div>
-              <div className="flex justify-end gap-3 mt-6">
+              <div className="flex justify-end gap-3 mt-8">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                  className="px-5 py-2 text-sm font-medium rounded-lg cursor-pointer"
+                  style={{ color: 'var(--text-secondary)' }}
+                  onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
+                  onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+                  className="px-5 py-2 text-sm font-medium rounded-lg cursor-pointer"
+                  style={{
+                    background: 'var(--accent)',
+                    color: 'var(--surface-elevated)'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--accent-hover)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'var(--accent)'}
                 >
                   Create
                 </button>
