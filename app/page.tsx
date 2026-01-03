@@ -79,6 +79,24 @@ export default function Home() {
     }
   };
 
+  const deleteOrchestra = async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/orchestras/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        fetchOrchestras();
+      }
+    } catch (error) {
+      console.error('Failed to delete orchestra:', error);
+    }
+  };
+
   return (
     <main className="min-h-screen" style={{ background: 'var(--background)' }}>
       <div className="max-w-6xl mx-auto px-6 sm:px-8 lg:px-12 py-12">
@@ -125,10 +143,9 @@ export default function Home() {
         ) : (
           <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {orchestras.map((orchestra) => (
-              <Link
+              <div
                 key={orchestra.id}
-                href={`/orchestra/${orchestra.id}`}
-                className="block rounded-xl p-6 transition-all hover:-translate-y-0.5 cursor-pointer"
+                className="relative group block rounded-xl p-6 transition-all hover:-translate-y-0.5"
                 style={{
                   background: 'var(--surface)',
                   border: '1px solid var(--border)',
@@ -143,45 +160,73 @@ export default function Home() {
                   e.currentTarget.style.borderColor = 'var(--border)';
                 }}
               >
-                <h2
-                  className="text-2xl font-light mb-3"
-                  style={{
-                    fontFamily: 'var(--font-display)',
-                    color: 'var(--text-primary)'
+                {/* Delete button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteOrchestra(orchestra.id, orchestra.name);
                   }}
+                  className="absolute top-4 right-4 p-2 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                  style={{
+                    color: 'var(--text-tertiary)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(220, 38, 38, 0.1)';
+                    e.currentTarget.style.color = '#dc2626';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.color = 'var(--text-tertiary)';
+                  }}
+                  title="Delete orchestra"
                 >
-                  {orchestra.name}
-                </h2>
-                <p className="text-sm mb-5 truncate" style={{ color: 'var(--text-tertiary)' }}>
-                  {orchestra.repositoryPath}
-                </p>
-                <div className="flex justify-between text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
-                  <span>
-                    {orchestra.backlogItems.length} queued
-                  </span>
-                  <span>
-                    WIP: {orchestra.backlogItems.filter(i => ['IN_PROGRESS', 'WAITING', 'PR_OPEN'].includes(i.status)).length}/{orchestra.wipLimit}
-                  </span>
-                </div>
-                <div>
-                  <span
-                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
-                    style={
-                      orchestra.status === 'ACTIVE'
-                        ? {
-                            background: 'rgba(139, 115, 85, 0.1)',
-                            color: 'var(--accent)'
-                          }
-                        : {
-                            background: 'var(--border)',
-                            color: 'var(--text-secondary)'
-                          }
-                    }
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </button>
+
+                {/* Clickable card content */}
+                <Link href={`/orchestra/${orchestra.id}`} className="cursor-pointer">
+                  <h2
+                    className="text-2xl font-light mb-3"
+                    style={{
+                      fontFamily: 'var(--font-display)',
+                      color: 'var(--text-primary)'
+                    }}
                   >
-                    {orchestra.status}
-                  </span>
-                </div>
-              </Link>
+                    {orchestra.name}
+                  </h2>
+                  <p className="text-sm mb-5 truncate" style={{ color: 'var(--text-tertiary)' }}>
+                    {orchestra.repositoryPath}
+                  </p>
+                  <div className="flex justify-between text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
+                    <span>
+                      {orchestra.backlogItems.length} queued
+                    </span>
+                    <span>
+                      WIP: {orchestra.backlogItems.filter(i => ['IN_PROGRESS', 'WAITING', 'PR_OPEN'].includes(i.status)).length}/{orchestra.wipLimit}
+                    </span>
+                  </div>
+                  <div>
+                    <span
+                      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
+                      style={
+                        orchestra.status === 'ACTIVE'
+                          ? {
+                              background: 'rgba(139, 115, 85, 0.1)',
+                              color: 'var(--accent)'
+                            }
+                          : {
+                              background: 'var(--border)',
+                              color: 'var(--text-secondary)'
+                            }
+                      }
+                    >
+                      {orchestra.status}
+                    </span>
+                  </div>
+                </Link>
+              </div>
             ))}
           </div>
         )}

@@ -27,7 +27,7 @@ describe('Home Page', () => {
 
     render(<Home />);
 
-    expect(screen.getByRole('heading', { name: /orchestra dashboard/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /^orchestra$/i })).toBeInTheDocument();
   });
 
   it('should fetch and display orchestras', async () => {
@@ -93,7 +93,8 @@ describe('Home Page', () => {
     const newButton = screen.getByRole('button', { name: /new orchestra/i });
     await user.click(newButton);
 
-    expect(screen.getByText(/create new orchestra/i)).toBeInTheDocument();
+    // Modal heading should be visible
+    expect(screen.getByRole('heading', { name: /^new orchestra$/i })).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/my project orchestra/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/\/users\/username\/projects\/my-app/i)).toBeInTheDocument();
   });
@@ -115,5 +116,115 @@ describe('Home Page', () => {
     );
 
     consoleErrorSpy.mockRestore();
+  });
+
+  it('should delete orchestra when delete button is clicked and confirmed', async () => {
+    const mockOrchestras = [
+      {
+        id: '1',
+        name: 'Test Orchestra',
+        repositoryPath: '/test/path',
+        wipLimit: 2,
+        status: 'ACTIVE',
+        createdAt: '2024-01-01T00:00:00Z',
+        agents: [],
+        backlogItems: [],
+      },
+    ];
+
+    // Mock window.confirm
+    const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(true);
+
+    // Initial fetch returns orchestra
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ success: true, data: mockOrchestras }),
+    });
+
+    const user = userEvent.setup();
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Test Orchestra')).toBeInTheDocument();
+    });
+
+    // Mock DELETE request
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ success: true, data: { deleted: true } }),
+    });
+
+    // Mock fetch for refresh after delete (empty list)
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ success: true, data: [] }),
+    });
+
+    // Find and click delete button
+    const deleteButton = screen.getByTitle('Delete orchestra');
+    await user.click(deleteButton);
+
+    // Verify confirmation was called
+    expect(confirmSpy).toHaveBeenCalledWith(
+      'Are you sure you want to delete "Test Orchestra"? This action cannot be undone.'
+    );
+
+    // Verify DELETE request was made
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith('/api/orchestras/1', {
+        method: 'DELETE',
+      });
+    });
+
+    // Verify list was refreshed
+    await waitFor(() => {
+      expect(screen.getByText(/no orchestras yet/i)).toBeInTheDocument();
+    });
+
+    confirmSpy.mockRestore();
+  });
+
+  it('should not delete orchestra when user cancels confirmation', async () => {
+    const mockOrchestras = [
+      {
+        id: '1',
+        name: 'Test Orchestra',
+        repositoryPath: '/test/path',
+        wipLimit: 2,
+        status: 'ACTIVE',
+        createdAt: '2024-01-01T00:00:00Z',
+        agents: [],
+        backlogItems: [],
+      },
+    ];
+
+    // Mock window.confirm to return false (user cancels)
+    const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(false);
+
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ success: true, data: mockOrchestras }),
+    });
+
+    const user = userEvent.setup();
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Test Orchestra')).toBeInTheDocument();
+    });
+
+    const deleteButton = screen.getByTitle('Delete orchestra');
+    await user.click(deleteButton);
+
+    // Verify confirmation was called
+    expect(confirmSpy).toHaveBeenCalled();
+
+    // Verify DELETE was NOT called (only initial fetch)
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+
+    // Orchestra should still be visible
+    expect(screen.getByText('Test Orchestra')).toBeInTheDocument();
+
+    confirmSpy.mockRestore();
   });
 });
