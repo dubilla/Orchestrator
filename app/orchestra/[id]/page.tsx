@@ -36,6 +36,15 @@ type Orchestra = {
   lastSyncedHash?: string;
 };
 
+type Session = {
+  id: string;
+  type: 'cli' | 'sdk';
+  projectPath: string;
+  lastActivity: string;
+  messageCount: number;
+  branch?: string;
+};
+
 export type SyncPreviewData = {
   preview: {
     adds: Array<{ content: string; lineNumber: number; position: number }>;
@@ -68,10 +77,12 @@ export default function OrchestraDetail() {
   const [orchestra, setOrchestra] = useState<Orchestra | null>(null);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [backlogItems, setBacklogItems] = useState<BacklogItem[]>([]);
+  const [sessions, setSessions] = useState<Session[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [showAgentModal, setShowAgentModal] = useState(false);
   const [showTerminatedAgents, setShowTerminatedAgents] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
 
   // Sync-related state
   const [syncPreview, setSyncPreview] = useState<SyncPreviewData | null>(null);
@@ -137,6 +148,23 @@ export default function OrchestraDetail() {
     }
   }, [orchestraId]);
 
+  const fetchSessions = useCallback(async () => {
+    try {
+      setSessionsLoading(true);
+      const res = await fetch(`/api/orchestras/${orchestraId}/sessions`);
+      const result = await res.json();
+      if (result.success) {
+        setSessions(result.data);
+      } else {
+        console.error('Failed to fetch sessions:', result.error);
+      }
+    } catch (error) {
+      console.error('Failed to fetch sessions:', error);
+    } finally {
+      setSessionsLoading(false);
+    }
+  }, [orchestraId]);
+
   const checkForSyncChanges = useCallback(async () => {
     try {
       const res = await fetch(`/api/orchestras/${orchestraId}/backlog/sync-preview`, {
@@ -186,9 +214,10 @@ export default function OrchestraDetail() {
       fetchOrchestra();
       fetchAgents();
       fetchBacklog();
+      fetchSessions();
       checkForSyncChanges();
     }
-  }, [orchestraId, fetchOrchestra, fetchAgents, fetchBacklog, checkForSyncChanges]);
+  }, [orchestraId, fetchOrchestra, fetchAgents, fetchBacklog, fetchSessions, checkForSyncChanges]);
 
   const createAgent = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -301,6 +330,97 @@ export default function OrchestraDetail() {
           >
             Spawn Agent
           </button>
+        </div>
+
+        {/* Sessions Section */}
+        <div className="mb-10">
+          <h2
+            className="text-2xl font-light mb-6"
+            style={{
+              fontFamily: 'var(--font-display)',
+              color: 'var(--text-primary)'
+            }}
+          >
+            Claude Sessions
+          </h2>
+
+          {sessionsLoading ? (
+            <div className="flex justify-center py-12">
+              <div
+                className="animate-spin rounded-full h-8 w-8 border-2"
+                style={{
+                  borderColor: 'var(--border)',
+                  borderTopColor: 'var(--accent)'
+                }}
+              ></div>
+            </div>
+          ) : sessions.length === 0 ? (
+            <div
+              className="rounded-xl p-8 text-center"
+              style={{
+                background: 'var(--surface)',
+                border: '1px solid var(--border)'
+              }}
+            >
+              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                No Claude sessions found for this project.
+              </p>
+              <p className="text-xs mt-2" style={{ color: 'var(--text-tertiary)' }}>
+                Sessions will appear here when you start Claude in this repository.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {sessions.map((session) => (
+                <div
+                  key={session.id}
+                  className="rounded-xl p-5 transition-all hover:-translate-y-0.5 cursor-pointer"
+                  style={{
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    boxShadow: '0 1px 3px var(--shadow-subtle)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.boxShadow = '0 4px 12px var(--shadow-medium)';
+                    e.currentTarget.style.borderColor = 'var(--accent)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.boxShadow = '0 1px 3px var(--shadow-subtle)';
+                    e.currentTarget.style.borderColor = 'var(--border)';
+                  }}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <span
+                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                      style={
+                        session.type === 'cli'
+                          ? { background: 'rgba(139, 115, 85, 0.1)', color: 'var(--accent)' }
+                          : { background: 'rgba(99, 102, 241, 0.1)', color: '#6366f1' }
+                      }
+                    >
+                      {session.type === 'cli' ? 'CLI' : 'SDK'}
+                    </span>
+                    <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                      {new Date(session.lastActivity).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="mb-3">
+                    <p className="text-sm font-mono truncate mb-1" style={{ color: 'var(--text-primary)' }}>
+                      {session.id}
+                    </p>
+                    <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                      {session.messageCount} {session.messageCount === 1 ? 'message' : 'messages'}
+                    </p>
+                  </div>
+                  {session.branch && (
+                    <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                      Branch: {session.branch}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
