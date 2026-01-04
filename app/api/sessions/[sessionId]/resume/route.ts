@@ -63,10 +63,18 @@ export async function POST(
 
               // Extract text from content blocks
               if (assistantMsg.content) {
+                let hasAddedText = false;
                 for (const block of assistantMsg.content) {
                   if (block.type === 'text') {
-                    const chunk = block.text;
+                    let chunk = block.text;
+
+                    // Add newline separator between consecutive text blocks
+                    if (hasAddedText && chunk) {
+                      chunk = '\n' + chunk;
+                    }
+
                     fullResponse += chunk;
+                    hasAddedText = true;
 
                     controller.enqueue(
                       encoder.encode(`data: ${JSON.stringify({ chunk, type: 'text' })}\n\n`)
