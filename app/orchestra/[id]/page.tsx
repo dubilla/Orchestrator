@@ -175,7 +175,10 @@ export default function OrchestraDetail() {
       if (result.success) {
         setSyncPreview(result.data);
       } else {
-        console.error('Failed to check sync:', result.error);
+        // Silently ignore if backlog file doesn't exist (expected for some projects)
+        if (!result.error?.includes('Backlog file not found')) {
+          console.error('Failed to check sync:', result.error);
+        }
         setSyncPreview(null);
       }
     } catch (error) {
