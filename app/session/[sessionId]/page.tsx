@@ -14,6 +14,32 @@ interface Session {
   branch?: string;
 }
 
+interface ToolExecution {
+  id: string;
+  name: string;
+  input?: Record<string, unknown>;
+  timestamp: string;
+  status: 'running' | 'completed';
+}
+
+// Helper to format tool input for display
+function formatToolInput(input: Record<string, unknown>): string {
+  // Show file_path if it exists
+  if (input.file_path && typeof input.file_path === 'string') {
+    return `on ${input.file_path.split('/').pop()}`;
+  }
+  // Show command if it exists
+  if (input.command && typeof input.command === 'string') {
+    const cmd = input.command;
+    return cmd.length > 30 ? `${cmd.substring(0, 30)}...` : cmd;
+  }
+  // Show pattern if it exists (for Grep)
+  if (input.pattern && typeof input.pattern === 'string') {
+    return `"${input.pattern}"`;
+  }
+  return '';
+}
+
 export default function SessionPage() {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -27,6 +53,7 @@ export default function SessionPage() {
   const [loading, setLoading] = useState(true);
   const [streaming, setStreaming] = useState(false);
   const [streamingMessage, setStreamingMessage] = useState('');
+  const [toolExecutions, setToolExecutions] = useState<ToolExecution[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -119,7 +146,22 @@ export default function SessionPage() {
               if (data.chunk && data.type === 'text') {
                 fullResponse += data.chunk;
                 setStreamingMessage(fullResponse);
+              } else if (data.type === 'tool_use') {
+                // Track tool execution
+                setToolExecutions(prev => [...prev, {
+                  id: data.tool_use_id || crypto.randomUUID(),
+                  name: data.tool,
+                  input: data.input,
+                  timestamp: new Date().toISOString(),
+                  status: 'running'
+                }]);
               } else if (data.done) {
+                // Mark all tools as completed
+                setToolExecutions(prev => prev.map(tool => ({
+                  ...tool,
+                  status: 'completed'
+                })));
+
                 // Finalize assistant message
                 setMessages((prev: SessionMessage[]) => [...prev, {
                   role: 'assistant',
@@ -127,9 +169,11 @@ export default function SessionPage() {
                   timestamp: new Date().toISOString()
                 }]);
                 setStreamingMessage('');
+                setToolExecutions([]); // Clear after message is complete
               } else if (data.error) {
                 console.error('Stream error:', data.error);
                 setStreamingMessage('');
+                setToolExecutions([]);
               }
             } catch {
               // Skip malformed JSON
@@ -275,6 +319,53 @@ export default function SessionPage() {
             </div>
           </div>
         ))}
+
+        {/* Tool executions */}
+        {toolExecutions.length > 0 && (
+          <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+            <div style={{
+              maxWidth: '80%',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.5rem'
+            }}>
+              {toolExecutions.map((tool) => (
+                <div key={tool.id} style={{
+                  padding: '0.75rem 1rem',
+                  borderRadius: '0.5rem',
+                  background: 'rgba(139, 92, 70, 0.05)',
+                  border: '1px solid rgba(139, 92, 70, 0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem'
+                }}>
+                  {tool.status === 'running' && (
+                    <div style={{
+                      width: '12px',
+                      height: '12px',
+                      borderRadius: '50%',
+                      border: '2px solid var(--accent)',
+                      borderTopColor: 'transparent',
+                      animation: 'spin 0.8s linear infinite'
+                    }} />
+                  )}
+                  <span style={{
+                    fontSize: '0.875rem',
+                    color: 'var(--text-secondary)',
+                    fontFamily: 'var(--font-geist-mono)'
+                  }}>
+                    Using <strong style={{ color: 'var(--accent)' }}>{tool.name}</strong>
+                    {tool.input && Object.keys(tool.input).length > 0 && (
+                      <span style={{ marginLeft: '0.5rem', opacity: 0.7 }}>
+                        {formatToolInput(tool.input)}
+                      </span>
+                    )}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Streaming message */}
         {streaming && streamingMessage && (
