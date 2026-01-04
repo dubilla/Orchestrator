@@ -4,6 +4,7 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { SessionMessage } from '@/lib/session-parser';
+import SkillPalette from '@/components/SkillPalette';
 
 interface Session {
   id: string;
@@ -20,6 +21,12 @@ interface ToolExecution {
   input?: Record<string, unknown>;
   timestamp: string;
   status: 'running' | 'completed';
+}
+
+interface Skill {
+  name: string;
+  description: string;
+  source: 'global' | 'local';
 }
 
 // Helper to format tool input for display
@@ -54,6 +61,8 @@ export default function SessionPage() {
   const [streaming, setStreaming] = useState(false);
   const [streamingMessage, setStreamingMessage] = useState('');
   const [toolExecutions, setToolExecutions] = useState<ToolExecution[]>([]);
+  const [skills, setSkills] = useState<Skill[]>([]);
+  const [showSkillPalette, setShowSkillPalette] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -99,6 +108,44 @@ export default function SessionPage() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, streamingMessage]);
+
+  // Fetch available skills
+  useEffect(() => {
+    const fetchSkills = async () => {
+      if (!repositoryPath) return;
+
+      try {
+        const res = await fetch(`/api/skills?repositoryPath=${encodeURIComponent(repositoryPath)}`);
+        const data = await res.json();
+
+        if (data.success) {
+          setSkills(data.data.skills);
+        }
+      } catch (error) {
+        console.error('Failed to fetch skills:', error);
+      }
+    };
+
+    fetchSkills();
+  }, [repositoryPath]);
+
+  // Handle ⌘K keyboard shortcut to open skill palette
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setShowSkillPalette(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Handle skill selection
+  const handleSkillSelect = (skillName: string) => {
+    setInput(`/${skillName} `);
+  };
 
   // Send message and stream response
   const sendMessage = async () => {
@@ -456,6 +503,14 @@ export default function SessionPage() {
           </button>
         </div>
       </div>
+
+      {/* Skill Palette */}
+      <SkillPalette
+        isOpen={showSkillPalette}
+        onClose={() => setShowSkillPalette(false)}
+        onSelectSkill={handleSkillSelect}
+        skills={skills}
+      />
 
       <style jsx>{`
         .cursor-blink {
