@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import AgentConversation from './AgentConversation';
 import SyncBanner from './SyncBanner';
 import SyncPreviewModal from './SyncPreviewModal';
@@ -374,7 +375,7 @@ export default function OrchestraDetail() {
               {sessions.map((session) => (
                 <div
                   key={session.id}
-                  className="rounded-xl p-5 transition-all hover:-translate-y-0.5 cursor-pointer"
+                  className="rounded-xl p-5 transition-all hover:-translate-y-0.5"
                   style={{
                     background: 'var(--surface)',
                     border: '1px solid var(--border)',
@@ -417,6 +418,29 @@ export default function OrchestraDetail() {
                       Branch: {session.branch}
                     </div>
                   )}
+
+                  <Link
+                    href={`/session/${session.id}?repo=${encodeURIComponent(orchestra?.repositoryPath || '')}`}
+                    className="block mt-4"
+                  >
+                    <button
+                      className="w-full px-4 py-2.5 rounded-lg text-sm font-medium transition-all"
+                      style={{
+                        background: 'var(--accent)',
+                        color: 'white',
+                        border: 'none',
+                        cursor: 'pointer'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'var(--accent-hover)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'var(--accent)';
+                      }}
+                    >
+                      Continue Session →
+                    </button>
+                  </Link>
                 </div>
               ))}
             </div>

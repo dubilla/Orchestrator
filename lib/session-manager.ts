@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import { parseSessionHistory, SessionMessage } from './session-parser';
 
 export interface Session {
   id: string;
@@ -97,7 +98,7 @@ export class SessionManager {
             // Try to extract branch from git context if present
             // For now, we'll leave this as undefined and can enhance later
           }
-        } catch (e) {
+        } catch {
           // Skip malformed lines
           continue;
         }
@@ -130,6 +131,13 @@ export class SessionManager {
     const sessions = await this.getSessionsForRepository(repositoryPath);
     return sessions.find(s => s.id === sessionId) || null;
   }
+
+  /**
+   * Get full conversation history for a session
+   */
+  async getSessionHistory(repositoryPath: string, sessionId: string): Promise<SessionMessage[]> {
+    return parseSessionHistory(sessionId, repositoryPath);
+  }
 }
 
 // Export function to get singleton instance
@@ -145,4 +153,5 @@ export function getSessionManager(): SessionManager {
 export const sessionManager = {
   getSessionsForRepository: (path: string) => getSessionManager().getSessionsForRepository(path),
   getSession: (path: string, id: string) => getSessionManager().getSession(path, id),
+  getSessionHistory: (path: string, id: string) => getSessionManager().getSessionHistory(path, id),
 };
